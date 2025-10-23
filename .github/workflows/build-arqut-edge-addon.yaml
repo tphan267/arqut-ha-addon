@@ -3,11 +3,11 @@ name: Build and Push Arqut Edge HA Add-on
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*" # Trigger on tags like v0.1.0
+    # tags:
+    #   - "v*" # Trigger on tags like v0.1.0
     paths:
       - "arqut-edge/**"
-      - ".github/workflows/arqut-edge-build.yaml"
+      - ".github/workflows/build-arqut-edge-addon.yaml"
   workflow_run:
     workflows: ["Build Arqut Edge Application"]
     types:
@@ -16,7 +16,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
 
     permissions:
       contents: read
@@ -44,8 +45,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: arqut-edge-binaries
-          run-id: ${{ github.event.workflow_run.id }}
           path: arqut-edge-app-binaries
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # run-id: ${{ github.event.workflow_run.id }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
