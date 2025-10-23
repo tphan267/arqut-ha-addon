@@ -42,12 +42,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Application Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
-          name: arqut-edge-binaries
+          # name: arqut-edge-binaries
           path: arqut-edge-app-binaries
+          merge-multiple: true
           github-token: ${{ secrets.APP_REPO_TOKEN }}
           # run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Arqut Edge Binaries
+        run: ls -R arqut-edge-app-binaries
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
