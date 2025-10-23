@@ -1,0 +1,88 @@
+name: Build and Push Arqut Edge HA Add-on
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*" # Trigger on tags like v0.1.0
+    paths:
+      - "arqut-edge/**"
+      - ".github/workflows/arqut-edge-build.yaml"
+  workflow_run:
+    workflows: ["Build Arqut Edge Application"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - arch: i386
+            build_from: ghcr.io/home-assistant/i386-base-debian:bullseye
+          - arch: amd64
+            build_from: ghcr.io/home-assistant/amd64-base-debian:bullseye
+          - arch: armv6
+            build_from: ghcr.io/home-assistant/armv7-base-debian:bullseye
+          - arch: armv7
+            build_from: ghcr.io/home-assistant/armv7-base-debian:bullseye
+          - arch: aarch64
+            build_from: ghcr.io/home-assistant/aarch64-base-debian:bullseye
+
+    steps:
+      - name: Checkout addon code
+        uses: actions/checkout@v4
+
+      - name: Download Application Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: arqut-edge-binaries
+          run-id: ${{ github.event.workflow_run.id }}
+          path: arqut-edge-app-binaries
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
+          tags: |
+            type=ref,event=tag
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=Arqut Edge Home Assistant Addon
+            org.opencontainers.image.description=Home Assistant addon for Arqut Edge
+            org.opencontainers.image.vendor=Arqut
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_FROM=${{ matrix.build_from }}
+            BINARY_PATH=./arqut-edge-app-binaries/${{ matrix.arch }}/arqut-edge
