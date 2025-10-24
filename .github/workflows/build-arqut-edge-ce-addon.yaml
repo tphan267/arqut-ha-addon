@@ -16,8 +16,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    # if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
 
     permissions:
       contents: read
@@ -41,14 +40,29 @@ jobs:
       - name: Checkout addon code
         uses: actions/checkout@v4
 
+      - name: Get latest run ID of a build-arqut-edge-ce-app.yaml
+        id: get_artifact_run_id
+        run: |
+          WORKFLOW_NAME="build-arqut-edge-ce-app.yaml"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          TOKEN="${{ secrets.GITHUB_TOKEN }}"
+
+          RUN_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/$WORKFLOW_NAME/runs?per_page=1" \
+            | jq '.workflow_runs[0].id')
+
+          echo "Latest run ID: $RUN_ID"
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+
       - name: Download Application Artifacts
-        if: ${{ github.event.workflow_run.id }}
+        if: ${{ github.event.workflow_run.id || get_artifact_run_id.outputs.RUN_ID }}
         uses: actions/download-artifact@v5
         with:
           # name: arqut-edge-ce-binaries
           path: arqut-edge-ce/app-binaries
-          # run-id: 18744736266
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id || get_artifact_run_id.outputs.RUN_ID }}
           github-token: ${{ secrets.APP_REPO_TOKEN }}
 
       - name: List downloaded app binaries
@@ -69,27 +83,27 @@ jobs:
           # username: ${{ github.actor }}
           # password: ${{ secrets.APP_REPO_TOKEN }}
 
-      # - name: Extract metadata for Docker
-      #   id: meta
-      #   uses: docker/metadata-action@v5
-      #   with:
-      #     images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
-      #     tags: |
-      #       type=ref,event=tag
-      #       type=sha,prefix={{branch}}-
-      #     labels: |
-      #       org.opencontainers.image.title=Arqut Edge Home Assistant Addon
-      #       org.opencontainers.image.description=Home Assistant addon for Arqut Edge
-      #       org.opencontainers.image.vendor=Arqut
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          # Fetch all tags and get the most recent one
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "Latest tag: $LATEST_TAG"
+          echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-      # - name: Extract version from git tag
-      #   if: startsWith(github.ref, 'refs/tags/v')
-      #   id: extract_version
-      #   shell: bash
-      #   env:
-      #     GITHUB_REF: ${{ github.ref }}
-      #   run: |
-      #     echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
+          tags: |
+            type=ref,event=tag
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=Arqut Edge Home Assistant Addon
+            org.opencontainers.image.description=Home Assistant addon for Arqut Edge
+            org.opencontainers.image.vendor=Arqut
 
       - name: Build and push HA Addon image
         uses: docker/build-push-action@v4
@@ -100,7 +114,7 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
           # tags: |
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
+          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ steps.get_tag.outputs.version || env.VERSION }}
           #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
           # labels: ${{ steps.meta.outputs.labels }}
           build-args: |
