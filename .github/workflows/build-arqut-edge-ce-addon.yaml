@@ -57,12 +57,12 @@ jobs:
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
       - name: Download Application Artifacts
-        if: ${{ github.event.workflow_run.id || get_artifact_run_id.outputs.RUN_ID }}
+        if: ${{ github.event.workflow_run.id || steps.get_artifact_run_id.outputs.RUN_ID }}
         uses: actions/download-artifact@v5
         with:
           # name: arqut-edge-ce-binaries
           path: arqut-edge-ce/app-binaries
-          run-id: ${{ github.event.workflow_run.id || get_artifact_run_id.outputs.RUN_ID }}
+          run-id: ${{ github.event.workflow_run.id || steps.get_artifact_run_id.outputs.RUN_ID }}
           github-token: ${{ secrets.APP_REPO_TOKEN }}
 
       - name: List downloaded app binaries
@@ -113,9 +113,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
-          # tags: |
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ steps.get_tag.outputs.version || env.VERSION }}
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ steps.get_tag.outputs.tag_name || env.VERSION }}
           # labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
