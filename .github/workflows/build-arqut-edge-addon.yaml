@@ -98,8 +98,8 @@ jobs:
       #   run: |
       #     echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+      - name: Build and push HA Addon image
+        uses: docker/build-push-action@v4
         with:
           context: ./arqut-edge
           platforms: linux/${{ matrix.arch }}
@@ -110,8 +110,6 @@ jobs:
           #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
           #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:latest
           # labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
             BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge
