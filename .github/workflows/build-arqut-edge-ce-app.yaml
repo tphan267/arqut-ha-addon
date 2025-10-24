@@ -1,0 +1,79 @@
+name: Build Arqut Edge Application
+
+on:
+  # push:
+  #   tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  SOURCE_REPO: "https://github.com/arqut/arqut-edge-ce.git"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Latest Tag
+        uses: actions/checkout@v4
+        with:
+          repository: arqut/arqut-edge-ce
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          # Fetch all tags and get the most recent one
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $LATEST_TAG"
+          echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout Latest Tag
+        if: ${{ steps.get_tag.outputs.tag_name != '' }}
+        run: |
+          git checkout ${{ steps.get_tag.outputs.tag_name }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.0.1"
+          cache: "npm"
+          cache-dependency-path: "ui/package-lock.json"
+
+      - name: Build UI HA mode
+        working-directory: ./ui
+        run: |
+          npm install
+          npm run build:docker
+
+      - name: Build Binary with GoReleaser
+        run: |
+          go version
+          # Download and run GoReleaser
+          curl -sfL https://goreleaser.com/static/run | bash -s -- release --skip=announce,publish,validate --clean
+
+          # Rename output dirs to correct arch names
+          mkdir -p artifacts
+          mv dist/arqut-edge-ce_linux_arm_7 artifacts/armv7
+          mv dist/arqut-edge-ce_linux_arm_6 artifacts/armv6
+          mv dist/arqut-edge-ce_linux_arm64_v8.0 artifacts/aarch64
+          mv dist/arqut-edge-ce_linux_amd64_v1 artifacts/amd64
+          mv dist/arqut-edge-ce_linux_386_sse2 artifacts/i386
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: arqut-edge-ce-binaries
+          overwrite: true
+          path: |
+            artifacts/
+          retention-days: 30
