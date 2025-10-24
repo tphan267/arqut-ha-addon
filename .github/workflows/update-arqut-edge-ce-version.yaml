@@ -53,6 +53,7 @@ jobs:
           NEW_VERSION="${{ steps.get_arqut_app_version.outputs.latest_version }}"
 
           python <<EOF
+          import os
           import yaml
 
           with open("$FILE", "r") as f:
