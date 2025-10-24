@@ -41,18 +41,20 @@ jobs:
       - name: Checkout addon code
         uses: actions/checkout@v4
 
-      - name: Download Application Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: arqut-edge-binaries
-          path: arqut-edge-app-binaries
-
       # - name: Download Application Artifacts
-      #   uses: actions/download-artifact@v5
+      #   uses: actions/download-artifact@v4
       #   with:
       #     name: arqut-edge-binaries
       #     path: arqut-edge-app-binaries
-      #     github-token: ${{ secrets.APP_REPO_TOKEN }}
+
+      - name: Download Application Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          # name: arqut-edge-binaries
+          # artifact-ids: ${{ github.event.workflow_run.artifacts.*.id }}
+          path: arqut-edge-app-binaries
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # github-token: ${{ secrets.APP_REPO_TOKEN }}
 
       - name: List downloaded files
         run: |
