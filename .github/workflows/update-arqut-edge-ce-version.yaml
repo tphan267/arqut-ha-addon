@@ -6,6 +6,9 @@ on:
     paths:
       - ".github/workflows/update-arqut-edge-ce-version.yaml"
 
+env:
+  GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+
 jobs:
   update-version:
     runs-on: ubuntu-latest
@@ -64,12 +67,18 @@ jobs:
               print("Version is already up to date.")
           EOF
 
-      - name: Commit and push changes
-        env:
-          GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
+      - name: Show Git Remote
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+
+          # Set authenticated remote using GH_TOKEN
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/tphan267/arqut-ha-addon.git
+
+          git remote -v
+
+      - name: Commit and push changes
+        run: |
           git add arqut-edge-ce/config.yaml
           git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_version.outputs.latest_version }}"
-          git push origin HEAD
+          git push origin HEAD:main
