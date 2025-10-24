@@ -4,6 +4,9 @@ on:
   # push:
   #   tags: ["v*"]
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-arqut-edge-app.yaml"
 
 env:
   SOURCE_REPO: "https://github.com/arqut/arqut-edge.git"

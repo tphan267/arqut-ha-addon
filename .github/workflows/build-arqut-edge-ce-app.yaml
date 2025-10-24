@@ -4,7 +4,9 @@ on:
   # push:
   #   tags: ["v*"]
   workflow_dispatch:
-
+  push:
+    paths:
+      - ".github/workflows/build-arqut-edge-ce-app.yaml"
 env:
   SOURCE_REPO: "https://github.com/arqut/arqut-edge-ce.git"
 
@@ -53,7 +55,7 @@ jobs:
         working-directory: ./ui
         run: |
           npm install
-          npm run build:docker
+          npm run build
 
       - name: Build Binary with GoReleaser
         run: |
