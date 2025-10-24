@@ -52,9 +52,9 @@ jobs:
         with:
           # name: arqut-edge-binaries
           # artifact-ids: ${{ github.event.workflow_run.artifacts.*.id }}
-          path: arqut-edge-app-binaries
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # github-token: ${{ secrets.APP_REPO_TOKEN }}
+          path: arqut-edge/app-binaries
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.APP_REPO_TOKEN }}
 
       - name: List downloaded files
         run: |
@@ -101,7 +101,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./arqut-edge
           platforms: linux/${{ matrix.arch }}
           push: true
           tags: |
@@ -114,4 +114,4 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
-            BINARY_PATH=./arqut-edge-app-binaries/${{ matrix.arch }}/arqut-edge
+            BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge
