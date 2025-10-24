@@ -66,10 +66,12 @@ jobs:
               data["version"] = "$NEW_VERSION"
               with open("$FILE", "w") as f:
                   yaml.dump(data, f, sort_keys=False)
-              print("::set-output name=changed::true")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write("changed=true\n")
           else:
               print("Version is already up to date.")
-              print("::set-output name=changed::false")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write("changed=false\n")
           EOF
 
       - name: Commit and push changes
