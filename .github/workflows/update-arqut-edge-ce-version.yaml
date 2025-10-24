@@ -64,15 +64,9 @@ jobs:
               print("Version is already up to date.")
           EOF
 
-      - name: Install GitHub CLI
-        run: sudo apt-get install gh
-
-      - name: Authenticate GitHub CLI
+      - name: Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
-        run: gh auth login --with-token <<< "$GH_TOKEN"
-
-      - name: Commit and push changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
