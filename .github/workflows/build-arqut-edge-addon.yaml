@@ -41,12 +41,6 @@ jobs:
       - name: Checkout addon code
         uses: actions/checkout@v4
 
-      # - name: Download Application Artifacts
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: arqut-edge-binaries
-      #     path: arqut-edge-app-binaries
-
       - name: Download Application Artifacts
         uses: actions/download-artifact@v5
         with:
@@ -56,10 +50,6 @@ jobs:
           # run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.APP_REPO_TOKEN }}
 
-      # - name: List downloaded files
-      #   run: |
-      #     echo "Downloaded files:"
-      #     find arqut-edge-app-binaries -type f | head -20
       - name: List downloaded app binaries
         run: ls -R arqut-edge/app-binaries
 
@@ -75,6 +65,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          # username: ${{ github.actor }}
+          # password: ${{ secrets.APP_REPO_TOKEN }}
 
       # - name: Extract metadata for Docker
       #   id: meta
@@ -105,10 +97,10 @@ jobs:
           platforms: linux/${{ matrix.arch }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:latest
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:latest
           # tags: |
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:latest
+          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
+          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:latest
           # labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
