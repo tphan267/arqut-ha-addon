@@ -51,17 +51,17 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           # name: arqut-edge-binaries
-          # artifact-ids: ${{ github.event.workflow_run.artifacts.*.id }}
           path: arqut-edge/app-binaries
-          # github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 18744736266
+          # run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.APP_REPO_TOKEN }}
 
-      - name: List downloaded files
-        run: |
-          echo "Downloaded files:"
-          find arqut-edge-app-binaries -type f | head -20
-      # - name: Arqut Edge Binaries
-      #   run: ls -R arqut-edge-app-binaries
+      # - name: List downloaded files
+      #   run: |
+      #     echo "Downloaded files:"
+      #     find arqut-edge-app-binaries -type f | head -20
+      - name: List downloaded app binaries
+        run: ls -R arqut-edge/app-binaries
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
