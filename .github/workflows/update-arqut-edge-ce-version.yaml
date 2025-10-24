@@ -43,7 +43,7 @@ jobs:
         id: update_version
         run: |
           FILE="arqut-edge-ce/config.yaml"
-          NEW_VERSION="${{ steps.get_arqut_app_tag.outputs.latest_tag }}"
+          NEW_VERSION="${{ steps.get_arqut_app_tag.outputs.latest_tag#v }}"
 
           python <<EOF
           import yaml
@@ -71,4 +71,4 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.APP_REPO_TOKEN }}@github.com/tphan267/arqut-ha-addon.git
           git add arqut-edge-ce/config.yaml
           git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_tag.outputs.latest_tag }}"
-          git push
+          git push origin HEAD
