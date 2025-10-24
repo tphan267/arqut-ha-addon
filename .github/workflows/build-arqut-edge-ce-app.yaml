@@ -29,14 +29,19 @@ jobs:
         run: |
           # Fetch all tags and get the most recent one
           git fetch --tags
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "-")
           echo "Latest tag: $LATEST_TAG"
           echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout Latest Tag
-        if: ${{ steps.get_tag.outputs.tag_name != 'v0.0.0' }}
+        if: ${{ steps.get_tag.outputs.tag_name != '-' }}
         run: |
           git checkout ${{ steps.get_tag.outputs.tag_name }}
+
+      - name: Add Default Tag if none exist
+        if: ${{ steps.get_tag.outputs.tag_name == '-' }}
+        run: |
+          git tag v0.0.0
 
       - name: Setup Go
         uses: actions/setup-go@v4
