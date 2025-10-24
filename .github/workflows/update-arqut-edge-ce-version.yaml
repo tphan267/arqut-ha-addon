@@ -1,0 +1,73 @@
+name: Update Arqut Edge CE Version
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/update-arqut-edge-ce-version.yaml"
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Latest Tag
+        uses: actions/checkout@v4
+        with:
+          repository: arqut/arqut-edge-ce
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: arqut-edge-ce
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get Latest Tag
+        id: get_arqut_app_tag
+        run: |
+          cd arqut-edge-ce
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "Latest tag: $LATEST_TAG"
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check and update version
+        id: update_version
+        run: |
+          FILE="arqut-edge-ce/config.yaml"
+          NEW_VERSION="${{ steps.get_arqut_app_tag.outputs.latest_tag }}"
+
+          python <<EOF
+          import yaml
+
+          with open("$FILE", "r") as f:
+              data = yaml.safe_load(f)
+
+          current_version = data.get("version", "")
+          print("Current version:", current_version)
+
+          if current_version != "$NEW_VERSION":
+              print("Updating version to:", "$NEW_VERSION")
+              data["version"] = "$NEW_VERSION"
+              with open("$FILE", "w") as f:
+                  yaml.dump(data, f, sort_keys=False)
+          else:
+              print("Version is already up to date.")
+          EOF
+
+      - name: Commit and push changes
+        if: success()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add arqut-edge-ce/config.yaml
+          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_tag.outputs.latest_tag }}"
+          git push
