@@ -20,13 +20,14 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Get Latest Tag
-        id: get_arqut_app_tag
+      - name: Get Latest Version Tag
+        id: get_arqut_app_version
         run: |
           cd arqut-edge-ce
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-          echo "Latest tag: $LATEST_TAG"
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          LATEST_VERSION=${LATEST_TAG#v}
+          echo "Latest version: $LATEST_VERSION"
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,7 +44,7 @@ jobs:
         id: update_version
         run: |
           FILE="arqut-edge-ce/config.yaml"
-          NEW_VERSION="${{ steps.get_arqut_app_tag.outputs.latest_tag#v }}"
+          NEW_VERSION="${{ steps.get_arqut_app_version.outputs.latest_version }}"
 
           python <<EOF
           import yaml
@@ -70,5 +71,5 @@ jobs:
           git config user.email "github-actions@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.APP_REPO_TOKEN }}@github.com/tphan267/arqut-ha-addon.git
           git add arqut-edge-ce/config.yaml
-          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_tag.outputs.latest_tag }}"
+          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_version.outputs.latest_version }}"
           git push origin HEAD
