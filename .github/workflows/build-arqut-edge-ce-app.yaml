@@ -1,4 +1,4 @@
-name: Build Arqut Edge Application
+name: Build Arqut Edge CE Application
 
 on:
   # push:
