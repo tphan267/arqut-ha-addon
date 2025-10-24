@@ -42,16 +42,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Application Artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v4
         with:
-          # name: arqut-edge-binaries
+          name: arqut-edge-binaries
           path: arqut-edge-app-binaries
-          merge-multiple: true
-          github-token: ${{ secrets.APP_REPO_TOKEN }}
-          # run-id: ${{ github.event.workflow_run.id }}
 
-      - name: Arqut Edge Binaries
-        run: ls -R arqut-edge-app-binaries
+      # - name: Download Application Artifacts
+      #   uses: actions/download-artifact@v5
+      #   with:
+      #     name: arqut-edge-binaries
+      #     path: arqut-edge-app-binaries
+      #     github-token: ${{ secrets.APP_REPO_TOKEN }}
+
+      - name: List downloaded files
+        run: |
+          echo "Downloaded files:"
+          find arqut-edge-app-binaries -type f | head -20
+      # - name: Arqut Edge Binaries
+      #   run: ls -R arqut-edge-app-binaries
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -66,18 +74,27 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
-          tags: |
-            type=ref,event=tag
-            type=sha,prefix={{branch}}-
-          labels: |
-            org.opencontainers.image.title=Arqut Edge Home Assistant Addon
-            org.opencontainers.image.description=Home Assistant addon for Arqut Edge
-            org.opencontainers.image.vendor=Arqut
+      # - name: Extract metadata for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
+      #     tags: |
+      #       type=ref,event=tag
+      #       type=sha,prefix={{branch}}-
+      #     labels: |
+      #       org.opencontainers.image.title=Arqut Edge Home Assistant Addon
+      #       org.opencontainers.image.description=Home Assistant addon for Arqut Edge
+      #       org.opencontainers.image.vendor=Arqut
+
+      # - name: Extract version from git tag
+      #   if: startsWith(github.ref, 'refs/tags/v')
+      #   id: extract_version
+      #   shell: bash
+      #   env:
+      #     GITHUB_REF: ${{ github.ref }}
+      #   run: |
+      #     echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -85,8 +102,12 @@ jobs:
           context: .
           platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:latest
+          # tags: |
+          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
+          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-${{ matrix.arch }}:latest
+          # labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
