@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print version
-        run: echo "Version: ${{ inputs.version }}"
+        run: echo "Version ${{ inputs.version }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
