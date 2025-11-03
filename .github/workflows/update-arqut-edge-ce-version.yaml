@@ -2,9 +2,11 @@ name: Update Arqut Edge CE Version
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/update-arqut-edge-ce-version.yaml"
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 env:
   GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
@@ -13,30 +15,14 @@ jobs:
   update-version:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Latest Tag
-        uses: actions/checkout@v4
-        with:
-          repository: arqut/arqut-edge-ce
-          token: ${{ secrets.APP_REPO_TOKEN }}
-          path: arqut-edge-ce
-          ref: main
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Get Latest Version Tag
-        id: get_arqut_app_version
-        run: |
-          cd arqut-edge-ce
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-          LATEST_VERSION=${LATEST_TAG#v}
-          echo "Latest version: $LATEST_VERSION"
-          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+      - name: Print version
+        run: echo "Version: ${{ inputs.version }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           # token has write permissions
-          token: ${{ secrets.APP_REPO_TOKEN }}
+          token: ${{ env.GH_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,7 +36,7 @@ jobs:
         id: update_version
         run: |
           FILE="arqut-edge-ce/config.yaml"
-          NEW_VERSION="${{ steps.get_arqut_app_version.outputs.latest_version }}"
+          NEW_VERSION="${{ inputs.version }}"
 
           python <<EOF
           import os
@@ -81,5 +67,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add arqut-edge-ce/config.yaml
-          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ steps.get_arqut_app_version.outputs.latest_version }}"
+          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ inputs.version }}"
           git push origin HEAD:main

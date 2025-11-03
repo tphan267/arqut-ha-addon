@@ -2,22 +2,24 @@ name: Build and Push Arqut Edge CE HA Add-on
 
 on:
   workflow_dispatch:
-  push:
-    # tags:
-    #   - "v*" # Trigger on tags like v0.1.0
-    paths:
-      - "arqut-edge/**"
-      - ".github/workflows/build-arqut-edge-ce-addon.yaml"
-  workflow_run:
-    workflows: ["Build Arqut Edge CE Application"]
-    types:
-      - completed
+  workflow_call:
+    inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
+      version:
+        required: true
+        type: string
+
+env:
+  GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
-
+    
     permissions:
       contents: read
       packages: write
@@ -37,33 +39,18 @@ jobs:
             build_from: ghcr.io/home-assistant/aarch64-base-debian:bullseye
 
     steps:
+      - name: Print version
+        run: echo "Version: ${{ inputs.version }}"
+
       - name: Checkout addon code
         uses: actions/checkout@v4
 
-      - name: Get latest run ID of a build-arqut-edge-ce-app.yaml
-        id: get_artifact_run_id
-        run: |
-          WORKFLOW_NAME="build-arqut-edge-ce-app.yaml"
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-          TOKEN="${{ secrets.GITHUB_TOKEN }}"
-
-          RUN_ID=$(curl -s -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/$WORKFLOW_NAME/runs?per_page=1" \
-            | jq '.workflow_runs[0].id')
-
-          echo "Latest run ID: $RUN_ID"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-
       - name: Download Application Artifacts
-        if: ${{ github.event.workflow_run.id || steps.get_artifact_run_id.outputs.run_id }}
         uses: actions/download-artifact@v5
         with:
-          # name: arqut-edge-ce-binaries
           path: arqut-edge-ce/app-binaries
-          run-id: ${{ github.event.workflow_run.id || steps.get_artifact_run_id.outputs.run_id }}
-          github-token: ${{ secrets.APP_REPO_TOKEN }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ env.GH_TOKEN }}
 
       - name: List downloaded app binaries
         run: ls -R arqut-edge-ce/app-binaries
@@ -79,18 +66,18 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ env.GH_TOKEN }}
           # username: ${{ github.actor }}
-          # password: ${{ secrets.APP_REPO_TOKEN }}
+          # password: ${{ env.GH_TOKEN }}
 
-      - name: Get Latest Tag
-        id: get_tag
-        run: |
-          # Fetch all tags and get the most recent one
-          git fetch --tags
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
-          echo "Latest tag: $LATEST_TAG"
-          echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
+      # - name: Get Latest Tag
+      #   id: get_tag
+      #   run: |
+      #     # Fetch all tags and get the most recent one
+      #     git fetch --tags
+      #     LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+      #     echo "Latest tag: $LATEST_TAG"
+      #     echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Extract metadata for Docker
         id: meta
@@ -113,8 +100,14 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
-            ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ steps.get_tag.outputs.tag_name || env.VERSION }}
-          # labels: ${{ steps.meta.outputs.labels }}
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ inputs.version }}
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
             BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge-ce
+
+  trigger-next:
+    needs: build
+    uses: tphan267/arqut-ha-addon/.github/workflows/update-arqut-edge-ce-version.yaml@main
+    with:
+      run_id: ${{ github.event.workflow_run.id }}
+      version: ${{ inputs.version }}

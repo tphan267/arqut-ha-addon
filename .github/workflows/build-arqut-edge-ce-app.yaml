@@ -1,14 +1,13 @@
 name: Build Arqut Edge CE Application
 
 on:
-  # push:
-  #   tags: ["v*"]
   workflow_dispatch:
   push:
     paths:
       - ".github/workflows/build-arqut-edge-ce-app.yaml"
 env:
-  SOURCE_REPO: "https://github.com/arqut/arqut-edge-ce.git"
+  SRC_REPO: "arqut/arqut-edge-ce"
+  GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
 
 jobs:
   build:
@@ -18,8 +17,8 @@ jobs:
       - name: Checkout Latest Tag
         uses: actions/checkout@v4
         with:
-          repository: arqut/arqut-edge-ce
-          token: ${{ secrets.APP_REPO_TOKEN }}
+          repository: ${{ env.SRC_REPO }}
+          token: ${{ env.GH_TOKEN }}
           ref: main
           fetch-depth: 0
           fetch-tags: true
@@ -29,17 +28,17 @@ jobs:
         run: |
           # Fetch all tags and get the most recent one
           git fetch --tags
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "-")
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Latest tag: $LATEST_TAG"
           echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout Latest Tag
-        if: ${{ steps.get_tag.outputs.tag_name != '-' }}
+        if: ${{ steps.get_tag.outputs.tag_name != 'v0.0.0' }}
         run: |
           git checkout ${{ steps.get_tag.outputs.tag_name }}
 
       - name: Add Default Tag if none exist
-        if: ${{ steps.get_tag.outputs.tag_name == '-' }}
+        if: ${{ steps.get_tag.outputs.tag_name == 'v0.0.0' }}
         run: |
           git tag v0.0.0
 
@@ -84,3 +83,12 @@ jobs:
           path: |
             artifacts/
           retention-days: 30
+    outputs:
+      version: ${{ steps.get_tag.outputs.tag_name }}
+
+  trigger-next:
+    needs: build
+    uses: tphan267/arqut-ha-addon/.github/workflows/build-arqut-edge-ce-addon.yaml@main
+    with:
+      run_id: ${{ github.event.workflow_run.id }}
+      version: ${{ needs.build.outputs.version }}
