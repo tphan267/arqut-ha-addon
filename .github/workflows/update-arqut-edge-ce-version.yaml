@@ -2,6 +2,10 @@ name: Update Arqut Edge CE Version
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
   workflow_call:
     inputs:
       version:

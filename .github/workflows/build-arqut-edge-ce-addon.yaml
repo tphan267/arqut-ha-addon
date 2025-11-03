@@ -2,6 +2,15 @@ name: Build and Push Arqut Edge CE HA Add-on
 
 on:
   workflow_dispatch:
+    inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
+      version:
+        required: true
+        type: string
   workflow_call:
     inputs:
       # the run ID of the workflow that the artifacts are downloaded from
