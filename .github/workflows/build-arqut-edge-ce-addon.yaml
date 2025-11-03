@@ -107,5 +107,4 @@ jobs:
     needs: build
     uses: tphan267/arqut-ha-addon/.github/workflows/update-arqut-edge-ce-version.yaml@main
     with:
-      run_id: ${{ github.event.workflow_run.id }}
       version: ${{ needs.build.outputs.version }}
