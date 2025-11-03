@@ -83,6 +83,7 @@ jobs:
           path: |
             artifacts/
           retention-days: 30
+
     outputs:
       version: ${{ steps.get_tag.outputs.tag_name }}
 
