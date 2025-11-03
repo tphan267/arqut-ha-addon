@@ -9,13 +9,13 @@ env:
   SRC_REPO: "arqut/arqut-edge-ce"
   GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout Latest Tag
