@@ -57,12 +57,34 @@ jobs:
       - name: Download Application Artifacts
         run: |
           echo "Downloading artifact from: ${{ inputs.artifact_url }}"
+
+          # Original GitHub Actions artifact URL
+          original_url="${{ inputs.artifact_url }}"
+
+          # Extract owner, repo, and artifact ID using parameter expansion and regex
+          owner_repo=$(echo "$original_url" | cut -d '/' -f 4,5)
+          artifact_id=$(echo "$original_url" | grep -oE 'artifacts/[0-9]+' | cut -d '/' -f2)
+
+          # Construct the API URL
+          api_url="https://api.github.com/repos/${owner_repo}/actions/artifacts/${artifact_id}/zip"
+
+          # Output the result
+          echo "API URL: $api_url"
+
+          # Navigate to the addon directory
           cd arqut-edge
+
+          # Download the artifact using the API URL with authentication
           curl -L \
-            -H "Authorization: Bearer ${{ secrets.APP_REPO_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.REPO_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
-            ${{ inputs.artifact_url }}/zip \
+            "$api_url" \
             -o app-binaries.zip
+
+          # List the contents of the directory
+          ls -Rl .
+
+          # Unzip the downloaded artifact
           unzip app-binaries.zip -d ./app-binaries
 
       - name: List downloaded app binaries
