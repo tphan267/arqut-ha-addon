@@ -59,10 +59,9 @@ jobs:
       #     # github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download Application Artifacts
-        with:
-          context: ./arqut-edge-ce
         run: |
           echo "Downloading artifact from: ${{ inputs.artifact_url }}"
+          cd arqut-edge-ce
           curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -o app-binaries.zip \
             "${{ inputs.artifact_url }}"
