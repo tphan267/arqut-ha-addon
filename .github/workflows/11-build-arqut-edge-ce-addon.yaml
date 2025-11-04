@@ -135,20 +135,17 @@ jobs:
             BUILD_FROM=${{ matrix.build_from }}
             BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge-ce
 
-      - name: Set outputs
-        id: set_outputs
-        run: |
-          echo "token=${{ secrets.REPO_TOKEN }}" >> $GITHUB_OUTPUT
-          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+      - name: Set version output
+        id: set_version
+        run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
     outputs:
-      token: ${{ steps.set_outputs.outputs.token }}
-      version: ${{ steps.set_outputs.outputs.version }}
+      version: ${{ steps.set_version.outputs.version }}
 
   trigger-next:
     needs: build
     uses: tphan267/arqut-ha-addon/.github/workflows/12-update-arqut-edge-ce-addon-version.yaml@main
     secrets:
-      REPO_TOKEN: ${{ needs.build.outputs.token }}
+      REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
     with:
       version: ${{ needs.build.outputs.version }}

@@ -123,13 +123,12 @@ jobs:
         run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
     outputs:
-      token: ${{ secrets.REPO_TOKEN }}
       version: ${{ steps.set_version.outputs.version }}
 
   trigger-next:
     needs: build
     uses: tphan267/arqut-ha-addon/.github/workflows/12-update-arqut-edge-addon-version.yaml@main
     secrets:
-      REPO_TOKEN: ${{ needs.build.outputs.token }}
+      REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
     with:
       version: ${{ needs.build.outputs.version }}
