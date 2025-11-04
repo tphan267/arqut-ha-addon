@@ -77,6 +77,7 @@ jobs:
           mv dist/arqut-edge-ce_linux_386_sse2 artifacts/i386
 
       - name: Upload Build Artifacts
+        id: upload_artifacts
         uses: actions/upload-artifact@v4
         with:
           name: arqut-edge-ce-binaries
@@ -87,10 +88,11 @@ jobs:
 
     outputs:
       version: ${{ steps.get_tag.outputs.tag_name }}
+      artifact_url: ${{ steps.upload_artifacts.outputs.artifact_url }}
 
   trigger-next:
     needs: build
     uses: tphan267/arqut-ha-addon/.github/workflows/11-build-arqut-edge-ce-addon.yaml@main
     with:
-      run_id: ${{ github.event.workflow_run.id }}
       version: ${{ needs.build.outputs.version }}
+      artifact_url: ${{ needs.build.outputs.artifact_url }}

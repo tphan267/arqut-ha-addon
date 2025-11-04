@@ -3,8 +3,8 @@ name: 11 - Build Arqut Edge CE Add-on
 on:
   workflow_dispatch:
     inputs:
-      # the run ID of the workflow that the artifacts are downloaded from
-      run_id:
+      # the URL to download the binaries
+      artifact_url:
         required: true
         type: string
       # the version of addon to build
@@ -13,8 +13,8 @@ on:
         type: string
   workflow_call:
     inputs:
-      # the run ID of the workflow that the artifacts are downloaded from
-      run_id:
+      # the URL to download the binaries
+      artifact_url:
         required: true
         type: string
       # the version of addon to build
@@ -51,12 +51,22 @@ jobs:
       - name: Checkout addon code
         uses: actions/checkout@v4
 
+      # - name: Download Application Artifacts
+      #   uses: actions/download-artifact@v5
+      #   with:
+      #     path: arqut-edge-ce/app-binaries
+      #     run-id: ${{ inputs.run_id }}
+      #     # github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download Application Artifacts
-        uses: actions/download-artifact@v5
         with:
-          path: arqut-edge-ce/app-binaries
-          run-id: ${{ inputs.run_id }}
-          # github-token: ${{ secrets.GITHUB_TOKEN }}
+          context: ./arqut-edge-ce
+        run: |
+          echo "Downloading artifact from: ${{ inputs.artifact_url }}"
+          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -o app-binaries.zip \
+            "${{ inputs.artifact_url }}"
+          unzip app-binaries.zip -d ./app-binaries
 
       - name: List downloaded app binaries
         run: ls -R arqut-edge-ce/app-binaries
