@@ -58,9 +58,11 @@ jobs:
         run: |
           echo "Downloading artifact from: ${{ inputs.artifact_url }}"
           cd arqut-edge
-          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -o app-binaries.zip \
-            "${{ inputs.artifact_url }}"
+          curl -L \
+            -H "Authorization: Bearer ${{ secrets.APP_REPO_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "${{ inputs.artifact_url }}" \
+            -o app-binaries.zip
           unzip app-binaries.zip -d ./app-binaries
 
       - name: List downloaded app binaries
