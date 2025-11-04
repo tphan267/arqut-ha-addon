@@ -135,13 +135,15 @@ jobs:
             BUILD_FROM=${{ matrix.build_from }}
             BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge-ce
 
-      - name: Set version output
-        id: set_version
-        run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+      - name: Set outputs
+        id: set_outputs
+        run: |
+          echo "token=${{ secrets.REPO_TOKEN }}" >> $GITHUB_OUTPUT
+          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
     outputs:
-      token: ${{ secrets.REPO_TOKEN }}
-      version: ${{ steps.set_version.outputs.version }}
+      token: ${{ steps.set_outputs.outputs.token }}
+      version: ${{ steps.set_outputs.outputs.version }}
 
   trigger-next:
     needs: build
