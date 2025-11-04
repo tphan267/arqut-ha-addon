@@ -128,5 +128,7 @@ jobs:
   trigger-next:
     needs: build
     uses: tphan267/arqut-ha-addon/.github/workflows/12-update-arqut-edge-addon-version.yaml@main
+    secrets:
+      REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
     with:
       version: ${{ needs.build.outputs.version }}
