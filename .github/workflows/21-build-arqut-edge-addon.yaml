@@ -1,23 +1,30 @@
-name: Build and Push Arqut Edge HA Add-on
+name: 21 - Build Arqut Edge Add-on
 
 on:
   workflow_dispatch:
-  push:
-    # tags:
-    #   - "v*" # Trigger on tags like v0.1.0
-    paths:
-      - "arqut-edge/**"
-      - ".github/workflows/build-arqut-edge-addon.yaml"
-  workflow_run:
-    workflows: ["Build Arqut Edge Application"]
-    types:
-      - completed
+    inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
+      version:
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
+      version:
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    # if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
 
     permissions:
       contents: read
@@ -42,13 +49,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Application Artifacts
-        uses: actions/download-artifact@v5
         with:
-          # name: arqut-edge-binaries
           path: arqut-edge/app-binaries
-          run-id: 18744736266
-          # run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.APP_REPO_TOKEN }}
+          run-id: ${{ inputs.run_id }}
 
       - name: List downloaded app binaries
         run: ls -R arqut-edge/app-binaries
@@ -68,28 +71,6 @@ jobs:
           # username: ${{ github.actor }}
           # password: ${{ secrets.APP_REPO_TOKEN }}
 
-      # - name: Extract metadata for Docker
-      #   id: meta
-      #   uses: docker/metadata-action@v5
-      #   with:
-      #     images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
-      #     tags: |
-      #       type=ref,event=tag
-      #       type=sha,prefix={{branch}}-
-      #     labels: |
-      #       org.opencontainers.image.title=Arqut Edge Home Assistant Addon
-      #       org.opencontainers.image.description=Home Assistant addon for Arqut Edge
-      #       org.opencontainers.image.vendor=Arqut
-
-      # - name: Extract version from git tag
-      #   if: startsWith(github.ref, 'refs/tags/v')
-      #   id: extract_version
-      #   shell: bash
-      #   env:
-      #     GITHUB_REF: ${{ github.ref }}
-      #   run: |
-      #     echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
       - name: Build and push HA Addon image
         uses: docker/build-push-action@v4
         with:
@@ -98,10 +79,20 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:latest
-          # tags: |
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:${{ steps.extract_version.outputs.version || env.VERSION }}
-          #   ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:latest
-          # labels: ${{ steps.meta.outputs.labels }}
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ha-addon-${{ matrix.arch }}:${{ inputs.version }}
           build-args: |
             BUILD_FROM=${{ matrix.build_from }}
             BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge
+
+      - name: Set version output
+        id: set_version
+        run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
+
+  trigger-next:
+    needs: build
+    uses: tphan267/arqut-ha-addon/.github/workflows/12-update-arqut-edge-addon-version.yaml@main
+    with:
+      version: ${{ needs.build.outputs.version }}

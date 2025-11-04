@@ -1,4 +1,4 @@
-name: Build and Push Arqut Edge CE HA Add-on
+name: 11 - Build Arqut Edge CE Add-on
 
 on:
   workflow_dispatch:
@@ -21,9 +21,6 @@ on:
       version:
         required: true
         type: string
-
-env:
-  GH_TOKEN: ${{ secrets.APP_REPO_TOKEN }}
 
 jobs:
   build:
@@ -59,7 +56,7 @@ jobs:
         with:
           path: arqut-edge-ce/app-binaries
           run-id: ${{ inputs.run_id }}
-          github-token: ${{ env.GH_TOKEN }}
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List downloaded app binaries
         run: ls -R arqut-edge-ce/app-binaries
@@ -77,7 +74,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           # username: ${{ github.actor }}
-          # password: ${{ env.GH_TOKEN }}
+          # password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for Docker
         id: meta
@@ -114,6 +111,6 @@ jobs:
 
   trigger-next:
     needs: build
-    uses: tphan267/arqut-ha-addon/.github/workflows/update-arqut-edge-ce-version.yaml@main
+    uses: tphan267/arqut-ha-addon/.github/workflows/12-update-arqut-edge-ce-addon-version.yaml@main
     with:
       version: ${{ needs.build.outputs.version }}

@@ -1,13 +1,23 @@
-name: Update Arqut Edge CE Version
+name: 22 - Update Arqut Edge Add-on Version
 
 on:
   workflow_dispatch:
     inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
       version:
         required: true
         type: string
   workflow_call:
     inputs:
+      # the run ID of the workflow that the artifacts are downloaded from
+      run_id:
+        required: true
+        type: string
+      # the version of addon to build
       version:
         required: true
         type: string
@@ -36,7 +46,7 @@ jobs:
       - name: Check and update version
         id: update_version
         run: |
-          FILE="arqut-edge-ce/config.yaml"
+          FILE="arqut-edge/config.yaml"
           NEW_VERSION="${{ inputs.version }}"
 
           python <<EOF
@@ -67,6 +77,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add arqut-edge-ce/config.yaml
+          git add arqut-edge/config.yaml
           git diff --cached --quiet || git commit -m "[CI] Update version to ${{ inputs.version }}"
           git push origin HEAD:main
