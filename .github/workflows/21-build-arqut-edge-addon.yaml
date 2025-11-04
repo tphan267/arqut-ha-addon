@@ -49,6 +49,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Application Artifacts
+        uses: actions/download-artifact@v5
         with:
           path: arqut-edge/app-binaries
           run-id: ${{ inputs.run_id }}
