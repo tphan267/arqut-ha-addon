@@ -65,7 +65,7 @@ jobs:
           curl -L \
             -H "Authorization: Bearer ${{ secrets.APP_REPO_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
-            "${{ inputs.artifact_url }}" \
+            "${{ inputs.artifact_url }}"/zip \
             -o app-binaries.zip
           unzip app-binaries.zip -d ./app-binaries
 
