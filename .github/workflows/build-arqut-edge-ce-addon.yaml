@@ -1,0 +1,165 @@
+name: Build Arqut Edge CE Add-on
+
+on:
+  workflow_dispatch:
+    inputs:
+      # the URL to download the binaries
+      artifact_url:
+        required: true
+        type: string
+      # the version of addon to build
+      version:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    strategy:
+      matrix:
+        include:
+          - arch: i386
+            build_from: ghcr.io/home-assistant/i386-base-debian:bullseye
+          - arch: amd64
+            build_from: ghcr.io/home-assistant/amd64-base-debian:bullseye
+          - arch: armv6
+            build_from: ghcr.io/home-assistant/armv7-base-debian:bullseye
+          - arch: armv7
+            build_from: ghcr.io/home-assistant/armv7-base-debian:bullseye
+          - arch: aarch64
+            build_from: ghcr.io/home-assistant/aarch64-base-debian:bullseye
+
+    steps:
+      - name: Print version
+        run: echo "Version ${{ inputs.version }}"
+
+      - name: Checkout addon code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check and update version
+        id: update_version
+        run: |
+          FILE="arqut-edge-ce/config.yaml"
+          NEW_VERSION="${{ inputs.version }}"
+
+          python <<EOF
+          import os
+          import yaml
+
+          with open("$FILE", "r") as f:
+              data = yaml.safe_load(f)
+
+          current_version = data.get("version", "")
+          print("Current version:", current_version)
+
+          if current_version != "$NEW_VERSION":
+              print("Updating version to:", "$NEW_VERSION")
+              data["version"] = "$NEW_VERSION"
+              with open("$FILE", "w") as f:
+                  yaml.dump(data, f, sort_keys=False)
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write("changed=true\n")
+          else:
+              print("Version is already up to date.")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+                  out.write("changed=false\n")
+          EOF
+
+      - name: Commit and push changes
+        if: ${{ steps.update_version.outputs.changed == 'true' }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add arqut-edge-ce/config.yaml
+          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ inputs.version }}"
+          git push origin HEAD:main
+
+      - name: Download Application Artifacts
+        run: |
+          echo "Downloading artifact from: ${{ inputs.artifact_url }}"
+
+          # Original GitHub Actions artifact URL
+          original_url="${{ inputs.artifact_url }}"
+
+          # Extract owner, repo, and artifact ID using parameter expansion and regex
+          owner_repo=$(echo "$original_url" | cut -d '/' -f 4,5)
+          artifact_id=$(echo "$original_url" | grep -oE 'artifacts/[0-9]+' | cut -d '/' -f2)
+
+          # Construct the API URL
+          api_url="https://api.github.com/repos/${owner_repo}/actions/artifacts/${artifact_id}/zip"
+
+          # Output the result
+          echo "API URL: $api_url"
+
+          # Navigate to the addon directory
+          cd arqut-edge-ce
+
+          # Download the artifact using the API URL with authentication
+          curl -L \
+            -H "Authorization: Bearer ${{ secrets.REPO_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "$api_url" \
+            -o app-binaries.zip
+
+          # List the contents of the directory
+          ls -Rl .
+
+          # Unzip the downloaded artifact
+          unzip app-binaries.zip -d ./app-binaries
+
+      - name: List downloaded app binaries
+        run: ls -Rl arqut-edge-ce/app-binaries
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          # username: ${{ github.actor }}
+          # password: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Extract metadata for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
+      #     tags: |
+      #       type=ref,event=tag
+      #       type=sha,prefix={{branch}}-
+      #     labels: |
+      #       org.opencontainers.image.title=Arqut Edge Home Assistant Addon
+      #       org.opencontainers.image.description=Home Assistant addon for Arqut Edge
+      #       org.opencontainers.image.vendor=Arqut
+
+      - name: Build and push HA Addon image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./arqut-edge-ce
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:latest
+            ghcr.io/${{ github.repository_owner }}/arqut-edge-ce-ha-addon-${{ matrix.arch }}:${{ inputs.version }}
+          build-args: |
+            BUILD_FROM=${{ matrix.build_from }}
+            BINARY_PATH=./app-binaries/${{ matrix.arch }}/arqut-edge-ce
