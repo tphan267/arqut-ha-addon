@@ -83,15 +83,15 @@ jobs:
           mv dist/arqut-edge-ce_linux_amd64_v1 artifacts/amd64
           mv dist/arqut-edge-ce_linux_386_sse2 artifacts/i386
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.set_tag.outputs.tag_name }}
-          name: "Release ${{ steps.set_tag.outputs.tag_name }}"
-          body: "Automated release for Arqut Edge CE"
-          files: releases/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create GitHub Release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: ${{ steps.set_tag.outputs.tag_name }}
+      #     name: "Release ${{ steps.set_tag.outputs.tag_name }}"
+      #     body: "Automated release for Arqut Edge CE"
+      #     files: releases/*
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
         id: upload
