@@ -9,8 +9,8 @@ on:
         description: "Tag or version to build (leave empty for latest tag)"
         type: string
 
-permissions:
-  contents: write
+# permissions:
+#   contents: write
 
 jobs:
   build:
