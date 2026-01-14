@@ -26,11 +26,16 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Checkout Tag (if version not empty)
+        if: ${{ inputs.version != '' }}
+        run: |
+          git checkout ${{ inputs.version }}
+      
       - name: Set release tag
         id: set_tag
         run: |
           if [ "${{ inputs.version }}" != "" ]; then
-            echo "Using pushed tag: ${{ inputs.version }}"
+            echo "Using inputs tag: ${{ inputs.version }}"
             echo "tag_name=${{ inputs.version }}" >> $GITHUB_OUTPUT
           else
             git fetch --tags
@@ -39,10 +44,16 @@ jobs:
             echo "tag_name=$LATEST_TAG" >> $GITHUB_OUTPUT
           fi
 
-      - name: Checkout Related Tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.set_tag.outputs.tag_name }}
+      # - name: Checkout Related Tag
+      #   if: ${{ steps.set_tag.outputs.tag_name != '' }}
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: ${{ steps.set_tag.outputs.tag_name }}
+
+      - name: Checkout Tag (if version not empty)
+        if: ${{ steps.set_tag.outputs.tag_name != '' }}
+        run: |
+          git checkout ${{ steps.set_tag.outputs.tag_name }}
 
       - name: Setup Go
         uses: actions/setup-go@v4
