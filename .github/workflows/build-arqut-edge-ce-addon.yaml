@@ -3,18 +3,24 @@ name: Build Arqut Edge CE Add-on
 on:
   workflow_dispatch:
     inputs:
-      # the URL to download the binaries
-      artifact_url:
-        required: true
-        type: string
+      # # the URL to download the binaries
+      # artifact_url:
+      #   required: true
+      #   type: string
       # the version of addon to build
       version:
         required: true
         type: string
 
 jobs:
-  build:
+  call-build-binaries:
+    uses: ./.github/workflows/build-arqut-edge-ce-binaries.yaml
+    with:
+      version: ${{ github.event.inputs.version }}
+
+  build-addon:
     runs-on: ubuntu-latest
+    needs: call-build-binaries
 
     permissions:
       contents: write
@@ -90,38 +96,44 @@ jobs:
           git diff --cached --quiet || git commit -m "[CI] Update version to ${{ inputs.version }}"
           git push origin HEAD:main
 
-      - name: Download Application Artifacts
-        run: |
-          echo "Downloading artifact from: ${{ inputs.artifact_url }}"
+      # - name: Download Application Artifacts
+      #   run: |
+      #     echo "Downloading artifact from: ${{ inputs.artifact_url }}"
 
-          # Original GitHub Actions artifact URL
-          original_url="${{ inputs.artifact_url }}"
+      #     # Original GitHub Actions artifact URL
+      #     original_url="${{ inputs.artifact_url }}"
 
-          # Extract owner, repo, and artifact ID using parameter expansion and regex
-          owner_repo=$(echo "$original_url" | cut -d '/' -f 4,5)
-          artifact_id=$(echo "$original_url" | grep -oE 'artifacts/[0-9]+' | cut -d '/' -f2)
+      #     # Extract owner, repo, and artifact ID using parameter expansion and regex
+      #     owner_repo=$(echo "$original_url" | cut -d '/' -f 4,5)
+      #     artifact_id=$(echo "$original_url" | grep -oE 'artifacts/[0-9]+' | cut -d '/' -f2)
 
-          # Construct the API URL
-          api_url="https://api.github.com/repos/${owner_repo}/actions/artifacts/${artifact_id}/zip"
+      #     # Construct the API URL
+      #     api_url="https://api.github.com/repos/${owner_repo}/actions/artifacts/${artifact_id}/zip"
 
-          # Output the result
-          echo "API URL: $api_url"
+      #     # Output the result
+      #     echo "API URL: $api_url"
 
-          # Navigate to the addon directory
-          cd arqut-edge-ce
+      #     # Navigate to the addon directory
+      #     cd arqut-edge-ce
 
-          # Download the artifact using the API URL with authentication
-          curl -L \
-            -H "Authorization: Bearer ${{ secrets.REPO_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "$api_url" \
-            -o app-binaries.zip
+      #     # Download the artifact using the API URL with authentication
+      #     curl -L \
+      #       -H "Authorization: Bearer ${{ secrets.REPO_TOKEN }}" \
+      #       -H "Accept: application/vnd.github+json" \
+      #       "$api_url" \
+      #       -o app-binaries.zip
 
-          # List the contents of the directory
-          ls -Rl .
+      #     # List the contents of the directory
+      #     ls -Rl .
 
-          # Unzip the downloaded artifact
-          unzip app-binaries.zip -d ./app-binaries
+      #     # Unzip the downloaded artifact
+      #     unzip app-binaries.zip -d ./app-binaries
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: arqut-edge-ce-binaries # must match upload
+          path: ./arqut-edge-ce/app-binaries
 
       - name: List downloaded app binaries
         run: ls -Rl arqut-edge-ce/app-binaries
@@ -140,19 +152,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           # username: ${{ github.actor }}
           # password: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Extract metadata for Docker
-      #   id: meta
-      #   uses: docker/metadata-action@v5
-      #   with:
-      #     images: ghcr.io/${{ github.repository_owner }}/arqut-ha-addon
-      #     tags: |
-      #       type=ref,event=tag
-      #       type=sha,prefix={{branch}}-
-      #     labels: |
-      #       org.opencontainers.image.title=Arqut Edge Home Assistant Addon
-      #       org.opencontainers.image.description=Home Assistant addon for Arqut Edge
-      #       org.opencontainers.image.vendor=Arqut
 
       - name: Build and push HA Addon image
         uses: docker/build-push-action@v4
