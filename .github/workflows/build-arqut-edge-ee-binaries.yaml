@@ -1,4 +1,4 @@
-name: Build Arqut Edge Binaries
+name: Build Arqut Edge EE Binaries
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Build Arqut Edge Add-on
+name: Build Arqut Edge EE Add-on
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   call-build-binaries:
-    uses: ./.github/workflows/build-arqut-edge-binaries.yaml
+    uses: ./.github/workflows/build-arqut-edge-ee-binaries.yaml
     with:
       version: ${{ github.event.inputs.version }}
 
