@@ -11,6 +11,9 @@ on:
       version:
         required: true
         type: string
+    secrets:
+      WORKFLOW_PAT:
+        required: true
 
 jobs:
   call-build-binaries:
