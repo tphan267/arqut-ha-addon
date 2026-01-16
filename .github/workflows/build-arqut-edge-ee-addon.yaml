@@ -8,12 +8,12 @@ on:
         type: string
 
 jobs:
-  call-build-binaries:
-    uses: ./.github/workflows/build-arqut-edge-ee-binaries.yaml
-    with:
-      version: ${{ github.event.inputs.version }}
-    secrets:
-      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+  # call-build-binaries:
+  #   uses: ./.github/workflows/build-arqut-edge-ee-binaries.yaml
+  #   with:
+  #     version: ${{ github.event.inputs.version }}
+  #   secrets:
+  #     WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   build-addon:
     runs-on: ubuntu-latest
@@ -52,47 +52,97 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install PyYAML
-        run: pip install pyyaml
+      # - name: Install PyYAML
+      #   run: pip install pyyaml
 
-      - name: Check and update version
-        id: update_version
+      # - name: Check and update version
+      #   id: update_version
+      #   run: |
+      #     FILE="arqut-edge-ee/config.yaml"
+      #     NEW_VERSION="${{ inputs.version }}"
+
+      #     python <<EOF
+      #     import os
+      #     import yaml
+
+      #     with open("$FILE", "r") as f:
+      #         data = yaml.safe_load(f)
+
+      #     current_version = data.get("version", "")
+      #     print("Current version:", current_version)
+
+      #     if current_version != "$NEW_VERSION":
+      #         print("Updating version to:", "$NEW_VERSION")
+      #         data["version"] = "$NEW_VERSION"
+      #         with open("$FILE", "w") as f:
+      #             yaml.dump(data, f, sort_keys=False)
+      #         with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+      #             out.write("changed=true\n")
+      #     else:
+      #         print("Version is already up to date.")
+      #         with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+      #             out.write("changed=false\n")
+      #     EOF
+
+      # - name: Commit and push changes
+      #   if: ${{ steps.update_version.outputs.changed == 'true' }}
+      #   run: |
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git pull --rebase origin main
+      #     git add arqut-edge-ee/config.yaml
+      #     if ! git diff --cached --quiet; then
+      #       git commit -m "[CI] Update arqut-edge-ee version to ${{ inputs.version }}"
+      #       git push origin main
+      #     else
+      #       echo "No changes to commit."
+      #     fi
+
+      - name: Update version and push changes
+        id: update_and_push
         run: |
-          FILE="arqut-edge-ee/config.yaml"
-          NEW_VERSION="${{ inputs.version }}"
-
-          python <<EOF
-          import os
-          import yaml
-
-          with open("$FILE", "r") as f:
-              data = yaml.safe_load(f)
-
-          current_version = data.get("version", "")
-          print("Current version:", current_version)
-
-          if current_version != "$NEW_VERSION":
-              print("Updating version to:", "$NEW_VERSION")
-              data["version"] = "$NEW_VERSION"
-              with open("$FILE", "w") as f:
-                  yaml.dump(data, f, sort_keys=False)
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-                  out.write("changed=true\n")
-          else:
-              print("Version is already up to date.")
-              with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-                  out.write("changed=false\n")
-          EOF
-
-      - name: Commit and push changes
-        if: ${{ steps.update_version.outputs.changed == 'true' }}
-        run: |
+          # Setup git
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git pull origin main
-          git add arqut-edge-ee/config.yaml
-          git diff --cached --quiet || git commit -m "[CI] Update arqut-edge-ee version to ${{ inputs.version }}"
-          git push origin main
+          
+          # Fetch latest changes first
+          git fetch origin
+          
+          # Reset to latest remote main (clean working directory)
+          git checkout main
+          git reset --hard origin/main
+          
+          FILE="arqut-edge-ee/config.yaml"
+          NEW_VERSION="${{ inputs.version }}"
+          
+          # Read current version
+          CURRENT_VERSION=$(yq eval '.version' "$FILE" 2>/dev/null || grep -E '^\s*version:' "$FILE" | head -1 | awk '{print $2}')
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "New version: $NEW_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
+            echo "Updating version to: $NEW_VERSION"
+            
+            # Update version in YAML (using yq if available, or sed)
+            if command -v yq &> /dev/null; then
+              yq eval ".version = \"$NEW_VERSION\"" -i "$FILE"
+            else
+              # Fallback to sed for simple YAML files
+              sed -i.bak "s/^\(\s*version:\s*\).*/\1\"$NEW_VERSION\"/" "$FILE"
+            fi
+            
+            # Add, commit and push
+            git add "$FILE"
+            git commit -m "[CI] Update arqut-edge-ee version to $NEW_VERSION"
+            git push origin main
+            
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Successfully updated and pushed version $NEW_VERSION"
+          else
+            echo "Version is already up to date."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download binaries
         uses: actions/download-artifact@v4
