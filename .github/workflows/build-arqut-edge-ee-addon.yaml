@@ -16,8 +16,8 @@ jobs:
   #     WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   build-addon:
-    runs-on: ubuntu-latest
-    needs: call-build-binaries
+    # runs-on: ubuntu-latest
+    # needs: call-build-binaries
 
     permissions:
       contents: write
