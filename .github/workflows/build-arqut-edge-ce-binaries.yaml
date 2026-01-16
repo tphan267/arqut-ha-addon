@@ -8,9 +8,9 @@ on:
         required: false
         description: "Tag or version to build (leave empty for latest tag)"
         type: string
-
-# permissions:
-#   contents: write
+    secrets:
+      WORKFLOW_PAT:
+        required: true
 
 jobs:
   build:
