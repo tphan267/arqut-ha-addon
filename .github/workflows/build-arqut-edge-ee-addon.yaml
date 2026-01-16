@@ -58,7 +58,7 @@ jobs:
       - name: Check and update version
         id: update_version
         run: |
-          FILE="arqut-edge/config.yaml"
+          FILE="arqut-edge-ee/config.yaml"
           NEW_VERSION="${{ inputs.version }}"
 
           python <<EOF
@@ -89,9 +89,10 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add arqut-edge/config.yaml
-          git diff --cached --quiet || git commit -m "[CI] Update version to ${{ inputs.version }}"
-          git push origin HEAD:main
+          git pull origin main
+          git add arqut-edge-ee/config.yaml
+          git diff --cached --quiet || git commit -m "[CI] Update arqut-edge-ee version to ${{ inputs.version }}"
+          git push origin main
 
       - name: Download binaries
         uses: actions/download-artifact@v4
