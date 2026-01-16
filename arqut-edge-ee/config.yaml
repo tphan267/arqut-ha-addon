@@ -1,0 +1,32 @@
+name: Arqut Tunnel EE Service
+description: Arqut Tunnel EE Service for Home Assistant
+version: 0.1.0
+slug: arqut-tunnel-ee-test
+init: false
+url: https://github.com/tphan267/arqut-ha-addon
+codenotary: tuan.phan267@gmail.com
+webui: http://[HOST]:[PORT:3030]
+image: ghcr.io/tphan267/arqut-edge-ee-ha-addon-{arch}
+arch:
+  - aarch64
+  - amd64
+  - armv7
+  - i386
+map:
+  - type: homeassistant_config
+    read_only: False
+    path: /haconfig
+startup: services
+host_network: true
+privileged:
+  - NET_ADMIN
+ports:
+  3030/tcp: 3030
+ports_description:
+  3030/tcp: Used for web interface and API
+options:
+  data_dir: "/data"
+  log_level: info
+schema:
+  data_dir: str
+  log_level: list(error|warn|info|debug)

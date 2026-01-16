@@ -10,10 +10,10 @@ ARG BINARY_PATH
 ENV LANG=C.UTF-8
 
 COPY run.sh /
-COPY ${BINARY_PATH} /arqut-edge-ce
+COPY ${BINARY_PATH} /arqut-edge-ee
 
 RUN chmod +x /run.sh
-RUN chmod +x /arqut-edge-ce
+RUN chmod +x /arqut-edge-ee
 
 # Fix line endings
 RUN sed -i 's/\r$//' /run.sh
