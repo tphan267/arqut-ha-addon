@@ -12,6 +12,8 @@ jobs:
     uses: ./.github/workflows/build-arqut-edge-ee-binaries.yaml
     with:
       version: ${{ github.event.inputs.version }}
+    secrets:
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
 
   build-addon:
     runs-on: ubuntu-latest
