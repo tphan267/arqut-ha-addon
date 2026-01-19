@@ -1,7 +1,7 @@
-name: Arqut Tunnel CE Service
-description: Arqut Tunnel CE Service for Home Assistant
-version: v0.1.2
-slug: arqut-tunnel-ce-test
+name: Arqut Edge CE
+description: Arqut Edge Community Edition — Secure Tunnel Service for Home Assistant, powered by WireGuard & WebRTC
+version: v0.1.3
+slug: arqut-edge-ce-test
 init: false
 url: https://github.com/tphan267/arqut-ha-addon-ce
 codenotary: tuan.phan267@gmail.com

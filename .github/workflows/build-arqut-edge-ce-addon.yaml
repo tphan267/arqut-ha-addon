@@ -3,17 +3,9 @@ name: Build Arqut Edge CE Add-on
 on:
   workflow_dispatch:
     inputs:
-      # # the URL to download the binaries
-      # artifact_url:
-      #   required: true
-      #   type: string
-      # the version of addon to build
       version:
         required: true
         type: string
-    secrets:
-      WORKFLOW_PAT:
-        required: true
 
 jobs:
   call-build-binaries:
@@ -54,11 +46,6 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
 
       - name: Update version and push changes
         id: update_and_push
@@ -127,8 +114,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          # username: ${{ github.actor }}
-          # password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push HA Addon image
         uses: docker/build-push-action@v4

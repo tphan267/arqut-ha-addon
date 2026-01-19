@@ -6,7 +6,7 @@
 ![Supports armv6 Architecture][armv6-shield]
 ![Supports i386 Architecture][i386-shield]
 
-The Arqut Edge add-on enables you to expose your internal web services securely through tunnel connections.
+The Arqut Edge CE add-on enables you to securely expose your internal web services through tunnel connections, powered by WireGuard & WebRTC.
 
 ![The Arqut Edge CE Application add-on](https://www.arqut.com/images/arqut-edge.png)
 
@@ -29,5 +29,5 @@ Thank you for being involved!
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 [armv6-shield]: https://img.shields.io/badge/armv6-yes-green.svg
 [i386-shield]: https://img.shields.io/badge/i386-yes-green.svg
-[docs]: https://github.com/arqut/arqut-ha-addon-ce/blob/main/arqut-edge/DOCS.md
-[issue]: https://github.com/arqut/arqut-ha-addon-ce/issues
+[docs]: https://github.com/arqut/arqut-ha-addon/blob/main/arqut-edge/DOCS.md
+[issue]: https://github.com/arqut/arqut-ha-addon/issues
