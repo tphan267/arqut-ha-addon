@@ -8,7 +8,7 @@
 
 The Arqut Edge CE add-on enables you to securely expose your internal web services through tunnel connections, powered by WireGuard & WebRTC.
 
-![The Arqut Edge CE Application add-on](https://www.arqut.com/images/arqut-edge.png)
+![The Arqut Edge CE Application add-on](https://www.arqut.com/images/arqut-edge-ce.jpg)
 
 ## About
 

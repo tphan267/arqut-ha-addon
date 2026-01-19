@@ -8,7 +8,7 @@
 
 The Arqut Edge add-on enables you to expose your internal web services securely through tunnel connections.
 
-![The Arqut Edge Application add-on](https://www.arqut.com/images/arqut-edge.png)
+![The Arqut Edge Application add-on](https://www.arqut.com/images/arqut-edge-ee.jpg)
 
 ## About
 

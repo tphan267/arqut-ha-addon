@@ -28,4 +28,6 @@ if [ ! -d "${DATA_DIR}" ]; then
 fi
 
 # Start the application
-ARQUT_DB_PATH="$DATA_DIR/arqut.db" ARQUT_CLOUD_URL="$SERVER_URL" ARQUT_API_KEY="$API_KEY" ARQUT_EDGE_ID="$EDGE_ID" /arqut-edge-ce -loglevel=$LOG_LEVEL
+ARQUT_CLOUD_URL="$SERVER_URL" ARQUT_API_KEY="$API_KEY" ARQUT_EDGE_ID="$EDGE_ID" /arqut-edge-ce \
+    -config="${DATA_DIR}/arqut.yaml" \
+    -loglevel="${LOG_LEVEL}"
