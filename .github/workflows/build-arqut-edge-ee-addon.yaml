@@ -49,6 +49,7 @@ jobs:
 
       - name: Update version and push changes
         id: update_and_push
+        continue-on-error: true
         run: |
           # Setup git
           git config user.name "github-actions"
@@ -84,10 +85,20 @@ jobs:
             # Add, commit and push
             git add "$FILE"
             git commit -m "[CI] Update arqut-edge-ee version to $NEW_VERSION"
-            git push origin main
             
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Successfully updated and pushed version $NEW_VERSION"
+            # git push origin main
+            # echo "changed=true" >> $GITHUB_OUTPUT
+            # echo "Successfully updated and pushed version $NEW_VERSION"
+
+            # Try to push, but don't fail if another job already pushed
+            if git push origin main; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "Successfully updated and pushed version $NEW_VERSION"
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "Could not push - another job may have already updated the version (this is expected with matrix builds)"
+              exit 0
+            fi
           else
             echo "Version is already up to date."
             echo "changed=false" >> $GITHUB_OUTPUT
