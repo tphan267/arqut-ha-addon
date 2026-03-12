@@ -1,6 +1,6 @@
 name: Arqut Edge EE
 description: Arqut Edge Enterprise Edition — Secure Tunnel Service for Home Assistant, powered by WireGuard & WebRTC
-version: v0.1.0
+version: v0.1.1
 slug: arqut-edge-ee-test
 init: false
 url: https://github.com/tphan267/arqut-ha-addon
