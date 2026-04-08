@@ -1,0 +1,167 @@
+blueprint:
+  name: Arqut Sensor Notification
+  description: Send notifications to multiple Arqut users when a sensor is triggered
+  domain: automation
+  source_url: https://github.com/tphan267/arqut-notification
+  
+  input:
+    # Sensor selection
+    trigger_sensor:
+      name: Trigger Sensor
+      description: The sensor that triggers the notification
+      selector:
+        entity:
+          domain: binary_sensor
+          multiple: false
+    
+    # Trigger state options
+    trigger_on:
+      name: Send when sensor turns ON
+      description: Send notification when sensor changes to ON state
+      default: true
+      selector:
+        boolean:
+    
+    trigger_off:
+      name: Send when sensor turns OFF
+      description: Send notification when sensor changes to OFF state
+      default: false
+      selector:
+        boolean:
+    
+    # Recipients as array of strings
+    recipients:
+      name: Recipients
+      description: Array of user IDs to receive the notification (e.g., ["public-user-id-1", "public-user-id-2"])
+      default: []
+      selector:
+        object:
+    
+    # Notification content
+    title:
+      name: Notification Title
+      description: Title of the notification
+      default: "Sensor Alert"
+      selector:
+        text:
+          multiline: false
+    
+    body:
+      name: Notification Body
+      description: Main message content
+      default: "Your sensor was triggered!"
+      selector:
+        text:
+          multiline: true
+    
+    # Optional action string
+    action:
+      name: Action (Optional)
+      description: Action identifier for the notification
+      default: ""
+      selector:
+        text:
+          multiline: false
+    
+    # Optional data object
+    data:
+      name: Additional Data (Optional)
+      description: JSON object with additional data
+      default: {}
+      selector:
+        object:
+    
+    # Cooldown to prevent spam
+    cooldown_minutes:
+      name: Cooldown Period (minutes)
+      description: Minimum time between notifications (0 to disable)
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: minutes
+          mode: slider
+
+    # Time restriction options
+    time_start:
+      name: Active Start Time
+      description: Only send notifications after this time
+      default: "00:00:00"
+      selector:
+        time: {}
+
+    time_end:
+      name: Active End Time
+      description: Only send notifications before this time
+      default: "23:59:59"
+      selector:
+        time: {}
+
+trigger:
+  platform: state
+  entity_id: !input trigger_sensor
+
+variables:
+  # Store inputs
+  sensor_entity: !input trigger_sensor
+  trigger_on: !input trigger_on
+  trigger_off: !input trigger_off
+  recipients: !input recipients
+  notification_title: !input title
+  notification_body: !input body
+  notification_action: !input action
+  notification_data: !input data
+  cooldown_minutes: !input cooldown_minutes
+  
+  # Get current state
+  current_state: "{{ states(sensor_entity) }}"
+  
+  # Determine if we should send based on trigger options
+  should_send: >
+    {% if current_state == 'on' and trigger_on %}
+      true
+    {% elif current_state == 'off' and trigger_off %}
+      true
+    {% else %}
+      false
+    {% endif %}
+  
+  # Sensor info for dynamic messages
+  sensor_name: "{{ state_attr(sensor_entity, 'friendly_name') or sensor_entity }}"
+  
+  # Cooldown check
+  last_triggered: "{{ state_attr('automation.this', 'last_triggered') }}"
+  last_triggered_timestamp: "{{ as_timestamp(last_triggered) if last_triggered is not none else 0 }}"
+  cooldown_passed: >
+    {% if cooldown_minutes | int == 0 %}
+      true
+    {% else %}
+      {{ (as_timestamp(now()) - last_triggered_timestamp) > (cooldown_minutes | int * 60) }}
+    {% endif %}
+
+# Conditions
+condition:
+  - condition: template
+    value_template: "{{ should_send }}"
+  
+  - condition: template
+    value_template: "{{ cooldown_passed }}"
+
+  - condition: time
+    after: !input time_start
+    before: !input time_end
+    
+# Actions
+action:
+  # Call your Arqut rest_command
+  - service: rest_command.arqut_send_notification
+    data:
+      to: "{{ recipients }}"
+      title: "{{ notification_title }}"
+      body: "{{ notification_body }}"
+      action: "{{ notification_action }}"
+      data: "{{ notification_data }}"
+
+mode: queued
+max_exceeded: silent
