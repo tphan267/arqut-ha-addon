@@ -2,7 +2,7 @@ blueprint:
   name: Create Arqut Event via MQTT
   description: Create new Arqut events by sending MQTT messages when a sensor is triggered, with options for cooldown and time restrictions.
   domain: automation
-  source_url: https://github.com/your-repo/arqut-notification
+  source_url: https://github.com/arqut/arqut-ha-addon/blob/main/homeassistant/blueprints/arqut-event-mqtt.yaml
   
   input:
     # Sensor selection

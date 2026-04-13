@@ -2,7 +2,7 @@ blueprint:
   name: Arqut Sensor Notification
   description: Send notifications to multiple Arqut users when a sensor is triggered
   domain: automation
-  source_url: https://github.com/tphan267/arqut-notification
+  source_url: https://github.com/arqut/arqut-ha-addon/blob/main/homeassistant/blueprints/arqut-notification.yaml
   
   input:
     # Sensor selection

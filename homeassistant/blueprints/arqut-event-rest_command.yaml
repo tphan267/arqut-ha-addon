@@ -1,0 +1,120 @@
+blueprint:
+  name: Create Arqut Event via Rest Command
+  description: Create new Arqut events by calling rest command when a sensor is triggered, with options for cooldown and time restrictions.
+  domain: automation
+  source_url: https://github.com/arqut/arqut-ha-addon/blob/main/homeassistant/blueprints/arqut-event-rest_command.yaml
+  input:
+    trigger_sensor:
+      name: Trigger Sensor
+      description: The sensor that triggers the notification
+      selector:
+        entity:
+          domain:
+          - binary_sensor
+          multiple: false
+          reorder: false
+    trigger_on:
+      name: Send when sensor turns ON
+      description: Send notification when sensor changes to ON state
+      default: true
+      selector:
+        boolean: {}
+    trigger_off:
+      name: Send when sensor turns OFF
+      description: Send notification when sensor changes to OFF state
+      default: false
+      selector:
+        boolean: {}
+    event_type:
+      name: Event Type
+      description: Event type to distinguish with the others
+      default: event
+      selector:
+        text:
+          multiline: false
+          multiple: false
+    title:
+      name: Event Title
+      description: Title of the event
+      default: Sensor Alert
+      selector:
+        text:
+          multiline: false
+          multiple: false
+    description:
+      name: Event Description
+      description: Description of the event
+      default: Your sensor was triggered!
+      selector:
+        text:
+          multiline: true
+          multiple: false
+    data:
+      name: Additional Data (Optional)
+      description: JSON object with additional data
+      default: {}
+      selector:
+        object:
+          multiple: false
+    cooldown_minutes:
+      name: Cooldown Period (minutes)
+      description: Minimum time between notifications (0 to disable)
+      default: 0
+      selector:
+        number:
+          min: 0.0
+          max: 60.0
+          unit_of_measurement: minutes
+          mode: slider
+          step: 1.0
+    time_start:
+      name: Active Start Time
+      description: Only send notifications after this time
+      default: 00:00:00
+      selector:
+        time: {}
+    time_end:
+      name: Active End Time
+      description: Only send notifications before this time
+      default: '23:59:59'
+      selector:
+        time: {}
+trigger:
+  platform: state
+  entity_id: !input trigger_sensor
+variables:
+  sensor_entity: !input trigger_sensor
+  trigger_on: !input trigger_on
+  trigger_off: !input trigger_off
+  event_type: !input event_type
+  event_title: !input title
+  event_description: !input description
+  event_data: !input data
+  cooldown_minutes: !input cooldown_minutes
+  current_state: '{{ states(sensor_entity) }}'
+  should_send: "{% if current_state == 'on' and trigger_on %}\n  true\n{% elif current_state
+    == 'off' and trigger_off %}\n  true\n{% else %}\n  false\n{% endif %}\n"
+  sensor_name: '{{ state_attr(sensor_entity, ''friendly_name'') or sensor_entity }}'
+  last_triggered: '{{ state_attr(''automation.this'', ''last_triggered'') }}'
+  last_triggered_timestamp: '{{ as_timestamp(last_triggered) if last_triggered is
+    not none else 0 }}'
+  cooldown_passed: "{% if cooldown_minutes | int == 0 %}\n  true\n{% else %}\n  {{
+    (as_timestamp(now()) - last_triggered_timestamp) > (cooldown_minutes | int * 60)
+    }}\n{% endif %}\n"
+condition:
+- condition: template
+  value_template: '{{ should_send }}'
+- condition: template
+  value_template: '{{ cooldown_passed }}'
+- condition: time
+  after: !input time_start
+  before: !input time_end
+action:
+- service: rest_command.arqut_edge_create_event
+  data:
+    title: '{{ event_title }}'
+    event_type: '{{ event_type }}'
+    description: '{{ event_description }}'
+    data: '{{ event_data }}'
+mode: queued
+max_exceeded: silent
